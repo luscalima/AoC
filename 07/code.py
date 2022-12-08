@@ -14,38 +14,33 @@ def to_path(current_path, new_path):
 
     return '/' + '/'.join(paths)
 
+def mount(statements, directories):
+    full_path = ''
 
-def mount(statements, index, full_path, directories):
-    if index >= len(statements):
-        return
+    for statement in statements:
+        if statement[0] =='$':
+            _, cmd, *path = statement.split(' ')
 
-    statement = statements[index]
+            if cmd == 'cd':
+                path = path[0]
 
-    if statement[0] =='$':
-        _, cmd, *path = statement.split(' ')
+                if path == '/':
+                    full_path = path
+                elif path == '..':
+                    full_path = path_return(full_path)
+                else:
+                    full_path = to_path(full_path, path)
 
-        if cmd == 'cd':
-            path = path[0]
+                if full_path not in directories:
+                    directories[full_path] = 0
 
-            if path == '/':
-                full_path = path
-            elif path == '..':
-                full_path = path_return(full_path)
-            else:
-                full_path = to_path(full_path, path)
-
-            if full_path not in directories:
-                directories[full_path] = 0
-
-    else:
-        file_size, file_name = statement.split(' ')
-
-        if file_size != 'dir':
-            directories[full_path] += int(file_size)
         else:
-            directories[to_path(full_path, file_name)] = 0
+            file_size, file_name = statement.split(' ')
 
-    return mount(statements, index + 1, full_path, directories)
+            if file_size != 'dir':
+                directories[full_path] += int(file_size)
+            else:
+                directories[to_path(full_path, file_name)] = 0
 
 def directory_size(directories, path):
     size = 0
@@ -58,8 +53,8 @@ def directory_size(directories, path):
 
 with open('input.txt') as f:
     statements = f.read().strip().split('\n')
-
-    mount(statements, 0, '', directories)
+    
+    mount(statements, directories)
 
     # Início - Código primeira parte
     size_sum = 0
@@ -81,7 +76,6 @@ with open('input.txt') as f:
     need_to_release = REQUIRED_SPACE - current_unused_space
 
     is_enough = root_directory_size
-    print('need_to_release', need_to_release)
 
     for path in directories:
         size = directory_size(directories, path)
